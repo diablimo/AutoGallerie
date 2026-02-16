@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoGallerie</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg: #0f2027;
+    --card: rgba(255,255,255,0.08);
+    --text: white;
+    --accent: #00c6ff;
+}
+
+body.light {
+    --bg: #f4f6f9;
+    --card: white;
+    --text: #222;
+}
+
+body {
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    transition:0.4s;
+    padding:20px;
+}
+
+header {
+    text-align:center;
+    margin-bottom:20px;
+}
+
+button {
+    padding:10px 15px;
+    border:none;
+    border-radius:25px;
+    cursor:pointer;
+    background:var(--accent);
+    color:white;
+    margin:5px 0;
+}
+
+.container {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+}
+
+.card {
+    background:var(--card);
+    border-radius:15px;
+    overflow:hidden;
+    backdrop-filter:blur(10px);
+    opacity:0;
+    transform:translateY(30px);
+    animation:fadeIn 0.6s forwards;
+    transition:0.3s;
+}
+
+.card:hover {
+    transform:scale(1.05);
+}
+
+.card img {
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.info {
+    padding:15px;
+}
+
+input[type="text"] {
+    width:calc(100% - 20px);
+    padding:8px 10px;
+    margin:5px 0;
+    border-radius:10px;
+    border:none;
+}
+
+#addCarForm {
+    background:var(--card);
+    padding:15px;
+    border-radius:15px;
+    margin-bottom:20px;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🚗 AutoGallery Pro MAX</h1>
+<button onclick="toggleTheme()">🌙 / ☀️</button>
+<button onclick="loginAdmin()">🔐 Admin</button>
+</header>
+
+<!-- FORMULAIRE D'AJOUT (Visible seulement en admin) -->
+<div id="addCarForm" style="display:none;">
+<h3>Ajouter une voiture</h3>
+<input type="text" id="name" placeholder="Nom de la voiture">
+<input type="text" id="brand" placeholder="Marque">
+<input type="text" id="type" placeholder="Type">
+<input type="text" id="image" placeholder="URL de l'image">
+<button onclick="addCar()">Ajouter</button>
+</div>
+
+<input type="text" placeholder="🔍 Rechercher..." 
+onkeyup="displayCars(this.value)" 
+style="width:100%;padding:10px;border-radius:25px;border:none;margin-bottom:20px;">
+
+<div class="container" id="cars"></div>
+
+<script>
+const carsContainer = document.getElementById("cars");
+let isAdmin = false; // mode admin par défaut
+
+let cars = JSON.parse(localStorage.getItem("cars")) || [
+{ name:"Tesla Model S", brand:"Tesla", type:"Électrique", image:"https://images.unsplash.com/photo-1619767886558-efdc259cde1a" },
+{ name:"BMW M4", brand:"BMW", type:"Sportive", image:"https://images.unsplash.com/photo-1617531653332-bd46c24f2068" },
+{ name:"Audi R8", brand:"Audi", type:"Supercar", image:"https://images.unsplash.com/photo-1603386329225-868f9b1ee6f9" },
+{ name:"Mercedes AMG GT", brand:"Mercedes", type:"Sportive", image:"https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6" },
+{ name:"Ferrari 488", brand:"Ferrari", type:"Supercar", image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70" },
+{ name:"Lamborghini Huracán", brand:"Lamborghini", type:"Supercar", image:"https://images.unsplash.com/photo-1544636331-e26879cd4d9b" }
+];
+
+function saveCars(){
+localStorage.setItem("cars",JSON.stringify(cars));
+}
+
+function displayCars(filter=""){
+carsContainer.innerHTML="";
+cars
+.filter(car =>
+car.name.toLowerCase().includes(filter.toLowerCase()) ||
+car.brand.toLowerCase().includes(filter.toLowerCase()) ||
+car.type.toLowerCase().includes(filter.toLowerCase())
+)
+.forEach((car,index)=>{
+carsContainer.innerHTML+=`
+<div class="card">
+<img src="${car.image}">
+<div class="info">
+<h3>${car.name}</h3>
+<p>Marque: ${car.brand}</p>
+<p>Type: ${car.type}</p>
+${isAdmin ? `<button onclick="editCar(${index})">✏️ Modifier</button>
+<button onclick="deleteCar(${index})">🗑 Supprimer</button>` : ''}
+</div>
+</div>
+`;
+});
+}
+
+displayCars();
+
+function toggleTheme(){
+document.body.classList.toggle("light");
+}
+
+// LOGIN ADMIN
+function loginAdmin(){
+let password = prompt("Mot de passe admin ?");
+if(password === "1234"){ // nouveau mot de passe
+    isAdmin = true;
+    document.getElementById("addCarForm").style.display = "block"; // affiche le formulaire
+    displayCars(); // rafraîchit les cartes pour montrer les boutons
+    alert("Mode admin activé !");
+} else {
+    alert("Mot de passe incorrect !");
+}
+}
+
+// AJOUTER UNE VOITURE
+function addCar(){
+const name=document.getElementById("name").value;
+const brand=document.getElementById("brand").value;
+const type=document.getElementById("type").value;
+const image=document.getElementById("image").value;
+
+if(name && brand && type && image){
+cars.push({name,brand,type,image});
+saveCars();
+displayCars();
+document.getElementById("name").value="";
+document.getElementById("brand").value="";
+document.getElementById("type").value="";
+document.getElementById("image").value="";
+alert("Voiture ajoutée !");
+} else {
+alert("Veuillez remplir tous les champs !");
+}
+}
+
+// MODIFIER UNE VOITURE
+function editCar(index){
+const car=cars[index];
+const newName=prompt("Nom:",car.name);
+const newBrand=prompt("Marque:",car.brand);
+const newType=prompt("Type:",car.type);
+const newImage=prompt("Image URL:",car.image);
+
+if(newName && newBrand && newType && newImage){
+cars[index]={name:newName,brand:newBrand,type:newType,image:newImage};
+saveCars();
+displayCars();
+}
+}
+
+// SUPPRIMER UNE VOITURE
+function deleteCar(index){
+if(confirm("Supprimer cette voiture ?")){
+cars.splice(index,1);
+saveCars();
+displayCars();
+}
+}
+</script>
+
+</body>
+</html>
